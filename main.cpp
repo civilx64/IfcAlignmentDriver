@@ -198,12 +198,12 @@ int main(int argc,char** argv)
 
 	for (auto& c : item->children)
 	{
-		auto& v = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-		std::cout << v.x() << ", " << v.y() << ", " << v.z() << std::endl;
-	}
+		auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
+		std::cout << s.x() << ", " << s.y() << ", " << s.z() << std::endl;
 
-	auto& v = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(item->children.back()->end)->components();
-	std::cout << v.x() << ", " << v.y() << ", " << v.z() << std::endl;
+		auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
+		std::cout << e.x() << ", " << e.y() << ", " << e.z() << std::endl;
+	}
 
    return 1;
 }
