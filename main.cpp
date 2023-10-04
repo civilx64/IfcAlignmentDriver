@@ -198,21 +198,8 @@ int main(int argc,char** argv)
 		auto items = representation->Items();
 		for (auto& item : *items)
 		{
-			if (item->as<Ifc4x3_add1::IfcCompositeCurve>())
-			{
-				auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add1::IfcCompositeCurve>()));
-				auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
-
-				for (auto& c : loop->children)
-				{
-					auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-					std::cout << s.x() << ", " << s.y() << std::endl;
-
-					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
-					std::cout << e.x() << ", " << e.y() << std::endl;
-				}
-			}
-			else if (item->as<Ifc4x3_add1::IfcGradientCurve>())
+			// IfcGradientCurve and IfcSegmentReferenceCure are both IfcCompositeCurves - test for the lower level type first
+			if (item->as<Ifc4x3_add1::IfcGradientCurve>())
 			{
 				auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add1::IfcGradientCurve>()));
 				auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
@@ -236,6 +223,20 @@ int main(int argc,char** argv)
 
 					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
 					std::cout << e.x() << ", " << e.y() << ", " << e.z() << std::endl;
+				}
+			}
+			else if (item->as<Ifc4x3_add1::IfcCompositeCurve>())
+			{
+				auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add1::IfcCompositeCurve>()));
+				auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
+
+				for (auto& c : loop->children)
+				{
+					auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
+					std::cout << s.x() << ", " << s.y() << std::endl;
+
+					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
+					std::cout << e.x() << ", " << e.y() << std::endl;
 				}
 			}
 		}
