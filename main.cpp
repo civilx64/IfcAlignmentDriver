@@ -206,10 +206,12 @@ int main(int argc,char** argv)
 				for (auto& c : loop->children)
 				{
 					auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-					std::cout << s.x() << ", " << s.y() << ", " << s.z() << std::endl;
+					auto su = sqrt(s.x() * s.x() + s.y() * s.y());
+					std::cout << s.x() << ", " << s.y() << ", " << su << ", " << s.z() << std::endl;
 
 					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
-					std::cout << e.x() << ", " << e.y() << ", " << e.z() << std::endl;
+					auto eu = sqrt(e.x() * e.x() + e.y() * e.y());
+					std::cout << e.x() << ", " << e.y() << ", " << eu << ", " << e.z() << std::endl;
 				}
 			}
 			else if (item->as<Ifc4x3_add1::IfcSegmentedReferenceCurve>())
@@ -219,10 +221,12 @@ int main(int argc,char** argv)
 				for (auto& c : loop->children)
 				{
 					auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-					std::cout << s.x() << ", " << s.y() << ", " << s.z() << std::endl;
+					auto su = sqrt(s.x() * s.x() + s.y() * s.y());
+					std::cout << s.x() << ", " << s.y() << ", " << su << ", " << s.z() << std::endl;
 
 					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
-					std::cout << e.x() << ", " << e.y() << ", " << e.z() << std::endl;
+					auto eu = sqrt(e.x() * e.x() + e.y() * e.y());
+					std::cout << e.x() << ", " << e.y() << ", " << eu << ", " << e.z() << std::endl;
 				}
 			}
 			else if (item->as<Ifc4x3_add1::IfcCompositeCurve>())
