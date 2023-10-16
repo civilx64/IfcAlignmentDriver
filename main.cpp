@@ -203,30 +203,52 @@ int main(int argc,char** argv)
 			{
 				auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add1::IfcGradientCurve>()));
 				auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
+
+				auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->components();
+				double ex = start.x(), ey = start.y();
+				double u = 0;
 				for (auto& c : loop->children)
 				{
 					auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-					auto su = sqrt(s.x() * s.x() + s.y() * s.y());
-					std::cout << s.x() << ", " << s.y() << ", " << su << ", " << s.z() << std::endl;
+					auto dx = s.x() - ex;
+					auto dy = s.y() - ey;
+					u += sqrt(dx*dx + dy*dy);
+					std::cout << s.x() << ", " << s.y() << ", " << u << ", " << s.z() << std::endl;
 
 					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
-					auto eu = sqrt(e.x() * e.x() + e.y() * e.y());
-					std::cout << e.x() << ", " << e.y() << ", " << eu << ", " << e.z() << std::endl;
+					dx = e.x() - s.x();
+					dy = e.y() - s.y();
+					u += sqrt(dx * dx + dy * dy);
+					std::cout << e.x() << ", " << e.y() << ", " << u << ", " << e.z() << std::endl;
+
+					ex = e.x();
+					ey = e.y();
 				}
 			}
 			else if (item->as<Ifc4x3_add1::IfcSegmentedReferenceCurve>())
 			{
 				auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add1::IfcSegmentedReferenceCurve>()));
 				auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
+
+				auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->components();
+				double ex = start.x(), ey = start.y();
+				double u = 0;
 				for (auto& c : loop->children)
 				{
 					auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-					auto su = sqrt(s.x() * s.x() + s.y() * s.y());
-					std::cout << s.x() << ", " << s.y() << ", " << su << ", " << s.z() << std::endl;
+					auto dx = s.x() - ex;
+					auto dy = s.y() - ey;
+					u += sqrt(dx * dx + dy * dy);
+					std::cout << s.x() << ", " << s.y() << ", " << u << ", " << s.z() << std::endl;
 
 					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
-					auto eu = sqrt(e.x() * e.x() + e.y() * e.y());
-					std::cout << e.x() << ", " << e.y() << ", " << eu << ", " << e.z() << std::endl;
+					dx = e.x() - s.x();
+					dy = e.y() - s.y();
+					u += sqrt(dx * dx + dy * dy);
+					std::cout << e.x() << ", " << e.y() << ", " << u << ", " << e.z() << std::endl;
+
+					ex = e.x();
+					ey = e.y();
 				}
 			}
 			else if (item->as<Ifc4x3_add1::IfcCompositeCurve>())
