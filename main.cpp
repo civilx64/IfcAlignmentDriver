@@ -103,7 +103,7 @@ void list_geometric_definition(Ifc4x3_add1::IfcAlignment* alignment)
 		}
 		else
 		{
-			std::cout << "Expecting FootPrint or Axis for representaiton identifier" << std::endl;
+			std::cout << "Expecting FootPrint or Axis for representation identifier" << std::endl;
 		}
 	}
 }
@@ -188,7 +188,7 @@ int main(int argc,char** argv)
 
 
 	////////////////////////////////////////
-	// Map the IfcCompositeCurve for the horizintal alignment of the first alignment
+	// Map the IfcCompositeCurve for the horizontal alignment of the first alignment
 	////////////////////////////////////////
 
 	auto alignment = *(alignments->begin());
@@ -198,6 +198,8 @@ int main(int argc,char** argv)
 		auto items = representation->Items();
 		for (auto& item : *items)
 		{
+			std::cout << item->data().toString() << std::endl;
+
 			// IfcGradientCurve and IfcSegmentReferenceCure are both IfcCompositeCurves - test for the lower level type first
 			if (item->as<Ifc4x3_add1::IfcGradientCurve>())
 			{
@@ -227,29 +229,29 @@ int main(int argc,char** argv)
 			}
 			else if (item->as<Ifc4x3_add1::IfcSegmentedReferenceCurve>())
 			{
-				auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add1::IfcSegmentedReferenceCurve>()));
-				auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
+				//auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add1::IfcSegmentedReferenceCurve>()));
+				//auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
 
-				auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->components();
-				double ex = start.x(), ey = start.y();
-				double u = 0;
-				for (auto& c : loop->children)
-				{
-					auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-					auto dx = s.x() - ex;
-					auto dy = s.y() - ey;
-					u += sqrt(dx * dx + dy * dy);
-					std::cout << s.x() << ", " << s.y() << ", " << u << ", " << s.z() << std::endl;
+				//auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->components();
+				//double ex = start.x(), ey = start.y();
+				//double u = 0;
+				//for (auto& c : loop->children)
+				//{
+				//	auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
+				//	auto dx = s.x() - ex;
+				//	auto dy = s.y() - ey;
+				//	u += sqrt(dx * dx + dy * dy);
+				//	std::cout << s.x() << ", " << s.y() << ", " << u << ", " << s.z() << std::endl;
 
-					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
-					dx = e.x() - s.x();
-					dy = e.y() - s.y();
-					u += sqrt(dx * dx + dy * dy);
-					std::cout << e.x() << ", " << e.y() << ", " << u << ", " << e.z() << std::endl;
+				//	auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
+				//	dx = e.x() - s.x();
+				//	dy = e.y() - s.y();
+				//	u += sqrt(dx * dx + dy * dy);
+				//	std::cout << e.x() << ", " << e.y() << ", " << u << ", " << e.z() << std::endl;
 
-					ex = e.x();
-					ey = e.y();
-				}
+				//	ex = e.x();
+				//	ey = e.y();
+				//}
 			}
 			else if (item->as<Ifc4x3_add1::IfcCompositeCurve>())
 			{
@@ -268,19 +270,19 @@ int main(int argc,char** argv)
 		}
 	}
 
-	//auto representation = *(alignment->Representation()->Representations()->begin());
-	//auto composite_curve = (*(representation->Items()->begin()))->as<Ifc4x3_add1::IfcCompositeCurve>();
-	//auto item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(composite_curve));
-	//auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(item->evaluate());
-
-	//for (auto& c : loop->children)
+	//auto axis2_placements = file.instances_by_type<Ifc4x3_add1::IfcAxis2PlacementLinear>();
+	//for (auto& placement : *axis2_placements)
 	//{
-	//	auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-	//	std::cout << s.x() << ", " << s.y() << ", " << s.z() << std::endl;
-
-	//	auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
-	//	std::cout << e.x() << ", " << e.y() << ", " << e.z() << std::endl;
+	//	auto m = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::matrix4>(mapping->map(placement));
+	//	m->print(std::cout);
 	//}
+
+	auto placements = file.instances_by_type<Ifc4x3_add1::IfcLinearPlacement>();
+	for (auto& object_placement : *placements)
+	{
+		auto m = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::matrix4>(mapping->map(object_placement));
+		m->print(std::cout);
+	}
 
    return 1;
 }
