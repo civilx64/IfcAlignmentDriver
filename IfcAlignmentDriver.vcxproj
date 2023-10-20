@@ -111,7 +111,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);bcrypt.lib;IfcParse.lib;IfcGeom.lib;geometry_mapping_ifc4x3_add1.lib;geometry_mapping_ifc4x3_tc1.lib;geometry_mapping_ifc4x2.lib;geometry_mapping_ifc4x1.lib;geometry_mapping_ifc4.lib;geometry_mapping_ifc2x3.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);bcrypt.lib;IfcParse.lib;IfcGeom.lib;geometry_mapping_ifc4x3_add2.lib;geometry_mapping_ifc4x3_add1.lib;geometry_mapping_ifc4x3_tc1.lib;geometry_mapping_ifc4x2.lib;geometry_mapping_ifc4x1.lib;geometry_mapping_ifc4.lib;geometry_mapping_ifc2x3.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(IFCOPENSHELL_DIR)\_build-vs2022-x64\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -131,7 +131,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);bcrypt.lib;IfcParse.lib;IfcGeom.lib;geometry_mapping_ifc4x3_add1.lib;geometry_mapping_ifc4x3_tc1.lib;geometry_mapping_ifc4x2.lib;geometry_mapping_ifc4x1.lib;geometry_mapping_ifc4.lib;geometry_mapping_ifc2x3.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);bcrypt.lib;IfcParse.lib;IfcGeom.lib;geometry_mapping_ifc4x3_add2.lib;geometry_mapping_ifc4x3_add1.lib;geometry_mapping_ifc4x3_tc1.lib;geometry_mapping_ifc4x2.lib;geometry_mapping_ifc4x1.lib;geometry_mapping_ifc4.lib;geometry_mapping_ifc2x3.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(IFCOPENSHELL_DIR)\_build-vs2022-x64\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
