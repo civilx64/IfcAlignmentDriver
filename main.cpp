@@ -46,6 +46,52 @@ void write_composite_curve(Ifc4x3_add2::IfcCompositeCurve* composite_curve)
 	}
 }
 
+void write_curve_segments(Ifc4x3_add2::IfcCompositeCurve* composite_curve)
+{
+	auto segments = composite_curve->Segments();
+	for (auto& segment : *segments)
+	{
+		std::cout << segment->data().toString() << std::endl;
+		auto* curve_segment = segment->as<Ifc4x3_add2::IfcCurveSegment>();
+		Ifc4x3_add2::IfcCurve* parent_curve = nullptr;
+		try
+		{
+			parent_curve = curve_segment->ParentCurve();
+		}
+		catch (...)
+		{
+		}
+
+		if (parent_curve)
+			std::cout << parent_curve->data().toString() << std::endl;
+		else
+			std::cout << "Zero length: " << curve_segment->SegmentLength()->data().toString() << std::endl;
+	}
+}
+
+void write_curve_definition(Ifc4x3_add2::IfcBoundedCurve* bounded_curve)
+{
+	if (bounded_curve->as<Ifc4x3_add2::IfcSegmentedReferenceCurve>())
+	{
+		write_curve_definition(bounded_curve->as<Ifc4x3_add2::IfcSegmentedReferenceCurve>()->BaseCurve());
+		std::cout << bounded_curve->as<Ifc4x3_add2::IfcSegmentedReferenceCurve>()->data().toString() << std::endl;
+		write_curve_segments(bounded_curve->as<Ifc4x3_add2::IfcCompositeCurve>());
+	}
+	else if (bounded_curve->as<Ifc4x3_add2::IfcGradientCurve>())
+	{
+		write_curve_definition(bounded_curve->as<Ifc4x3_add2::IfcGradientCurve>()->BaseCurve());
+		std::cout << bounded_curve->as<Ifc4x3_add2::IfcGradientCurve>()->data().toString() << std::endl;
+		write_curve_segments(bounded_curve->as<Ifc4x3_add2::IfcCompositeCurve>());
+	}
+	else if (bounded_curve->as<Ifc4x3_add2::IfcCompositeCurve>())
+	{
+		std::cout << bounded_curve->as<Ifc4x3_add2::IfcCompositeCurve>()->data().toString() << std::endl;
+		write_curve_segments(bounded_curve->as<Ifc4x3_add2::IfcCompositeCurve>());
+	}
+
+	std::cout << std::endl;
+}
+
 void list_geometric_definition(Ifc4x3_add2::IfcAlignment* alignment)
 {
 	std::cout << "Geometric Definition of Alignments" << std::endl;
@@ -198,7 +244,7 @@ int main(int argc,char** argv)
 		auto items = representation->Items();
 		for (auto& item : *items)
 		{
-			std::cout << item->data().toString() << std::endl;
+			//std::cout << item->data().toString() << std::endl;
 
 			// IfcGradientCurve and IfcSegmentReferenceCure are both IfcCompositeCurves - test for the lower level type first
 			if (item->as<Ifc4x3_add2::IfcGradientCurve>())
@@ -229,32 +275,36 @@ int main(int argc,char** argv)
 			}
 			else if (item->as<Ifc4x3_add2::IfcSegmentedReferenceCurve>())
 			{
-				//auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add2::IfcSegmentedReferenceCurve>()));
-				//auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
+				write_curve_definition(item->as<Ifc4x3_add2::IfcSegmentedReferenceCurve>());
 
-				//auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->components();
-				//double ex = start.x(), ey = start.y();
-				//double u = 0;
-				//for (auto& c : loop->children)
-				//{
-				//	auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
-				//	auto dx = s.x() - ex;
-				//	auto dy = s.y() - ey;
-				//	u += sqrt(dx * dx + dy * dy);
-				//	std::cout << s.x() << ", " << s.y() << ", " << u << ", " << s.z() << std::endl;
+				auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add2::IfcSegmentedReferenceCurve>()));
+				auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
 
-				//	auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
-				//	dx = e.x() - s.x();
-				//	dy = e.y() - s.y();
-				//	u += sqrt(dx * dx + dy * dy);
-				//	std::cout << e.x() << ", " << e.y() << ", " << u << ", " << e.z() << std::endl;
+				auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->components();
+				double ex = start.x(), ey = start.y();
+				double u = 0;
+				for (auto& c : loop->children)
+				{
+					auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
+					auto dx = s.x() - ex;
+					auto dy = s.y() - ey;
+					u += sqrt(dx * dx + dy * dy);
+					std::cout << s.x() << ", " << s.y() << ", " << u << ", " << s.z() << std::endl;
 
-				//	ex = e.x();
-				//	ey = e.y();
-				//}
+					auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
+					dx = e.x() - s.x();
+					dy = e.y() - s.y();
+					u += sqrt(dx * dx + dy * dy);
+					std::cout << e.x() << ", " << e.y() << ", " << u << ", " << e.z() << std::endl;
+
+					ex = e.x();
+					ey = e.y();
+				}
 			}
 			else if (item->as<Ifc4x3_add2::IfcCompositeCurve>())
 			{
+				//write_curve_definition(item->as<Ifc4x3_add2::IfcCompositeCurve>());
+
 				auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(item->as<Ifc4x3_add2::IfcCompositeCurve>()));
 				auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
 
