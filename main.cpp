@@ -11,8 +11,12 @@
 
 #define Schema Ifc4x3_add2
 
+// F:\IFC4.x-IF\IFC-files\Linear-placement-sleepers\ACCA\ACCA_sleepers-linear-placement-cant-implicit.ifc
 // F:\IFC4.x-IF\IFC-files\Linear-placement-sleepers\ACCA\ACCA_sleepers-linear-placement-cant-explicit.ifc
-//$(MSBuildProjectDirectory)\TestFiles\LargeSpirals\IFC_Alignment4_Br1.ifc
+// $(MSBuildProjectDirectory)\TestFiles\LargeSpirals\IFC_Alignment4_Br1.ifc
+// $(MSBuildProjectDirectory)\TestFiles\HorizontalCurves\HC_N90E_Right_1b.ifc
+// F:\IfcOpenshell\_build-vs2022-x64\examples\FHWA_Bridge_Geometry_Alignment_Example.ifc
+// $(MSBuildProjectDirectory)\TestFiles\SpiralCurves\SC_N90E_Left_1a.ifc
 
 void list_semantic_definition(Schema::IfcAlignment* alignment)
 {
@@ -89,24 +93,28 @@ void write_curve_segments(std::ostream& os, Schema::IfcCompositeCurve* composite
 	}
 }
 
-void write_curve_definition(std::ostream& os, Schema::IfcBoundedCurve* bounded_curve)
+void write_curve_definition(std::ostream& os, Schema::IfcCurve* curve)
 {
-	if (bounded_curve->as<Schema::IfcSegmentedReferenceCurve>())
+	if (curve->as<Schema::IfcSegmentedReferenceCurve>())
 	{
-		write_curve_definition(os,bounded_curve->as<Schema::IfcSegmentedReferenceCurve>()->BaseCurve());
-		os << bounded_curve->as<Schema::IfcSegmentedReferenceCurve>()->data().toString() << std::endl;
-		write_curve_segments(os,bounded_curve->as<Schema::IfcCompositeCurve>());
+		write_curve_definition(os, curve->as<Schema::IfcSegmentedReferenceCurve>()->BaseCurve());
+		os << curve->as<Schema::IfcSegmentedReferenceCurve>()->data().toString() << std::endl;
+		write_curve_segments(os, curve->as<Schema::IfcCompositeCurve>());
 	}
-	else if (bounded_curve->as<Schema::IfcGradientCurve>())
+	else if (curve->as<Schema::IfcGradientCurve>())
 	{
-		write_curve_definition(os,bounded_curve->as<Schema::IfcGradientCurve>()->BaseCurve());
-		os << bounded_curve->as<Schema::IfcGradientCurve>()->data().toString() << std::endl;
-		write_curve_segments(os,bounded_curve->as<Schema::IfcCompositeCurve>());
+		write_curve_definition(os, curve->as<Schema::IfcGradientCurve>()->BaseCurve());
+		os << curve->as<Schema::IfcGradientCurve>()->data().toString() << std::endl;
+		write_curve_segments(os, curve->as<Schema::IfcCompositeCurve>());
 	}
-	else if (bounded_curve->as<Schema::IfcCompositeCurve>())
+	else if (curve->as<Schema::IfcCompositeCurve>())
 	{
-		os << bounded_curve->as<Schema::IfcCompositeCurve>()->data().toString() << std::endl;
-		write_curve_segments(os,bounded_curve->as<Schema::IfcCompositeCurve>());
+		os << curve->as<Schema::IfcCompositeCurve>()->data().toString() << std::endl;
+		write_curve_segments(os, curve->as<Schema::IfcCompositeCurve>());
+	}
+	else if (curve->as<Schema::IfcOffsetCurveByDistances>())
+	{
+		os << curve->as<Schema::IfcOffsetCurveByDistances>()->data().toString() << std::endl;
 	}
 
 	os << std::endl;
@@ -115,30 +123,31 @@ void write_curve_definition(std::ostream& os, Schema::IfcBoundedCurve* bounded_c
 template <typename CurveType>
 void write_curve_parameters(std::ostream& os, IfcParse::IfcFile& file, ifcopenshell::geometry::abstract_mapping* mapping)
 {
+	auto length_unit = mapping->get_length_unit();
 	auto curves = file.instances_by_type<CurveType>();
 	for (auto& curve : *curves)
 	{
-		write_curve_definition(os, curve->as<CurveType>());
+		write_curve_definition(std::cout, curve->as<CurveType>());
 
 		auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(curve->as<CurveType>()));
 		auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
 
-		auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->components();
+		const auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->ccomponents();
 		double ex = start.x(), ey = start.y();
 		double u = 0;
 		for (auto& c : loop->children)
 		{
-			auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->components();
+			const auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->ccomponents();
 			auto dx = s.x() - ex;
 			auto dy = s.y() - ey;
 			u += sqrt(dx * dx + dy * dy);
-			os << s.x() << ", " << s.y() << ", " << u << ", " << s.z() << std::endl;
+			os << s.x()/length_unit << ", " << s.y() / length_unit << ", " << u / length_unit << ", " << s.z() / length_unit << std::endl;
 
-			auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->components();
+			const auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->ccomponents();
 			dx = e.x() - s.x();
 			dy = e.y() - s.y();
 			u += sqrt(dx * dx + dy * dy);
-			os << e.x() << ", " << e.y() << ", " << u << ", " << e.z() << std::endl;
+			os << e.x() / length_unit << ", " << e.y() / length_unit << ", " << u / length_unit << ", " << e.z() / length_unit << std::endl;
 
 			ex = e.x();
 			ey = e.y();
@@ -146,69 +155,6 @@ void write_curve_parameters(std::ostream& os, IfcParse::IfcFile& file, ifcopensh
 
 	}
 }
-
-//
-//void list_geometric_definition(Schema::IfcAlignment* alignment)
-//{
-//	std::cout << "Geometric Definition of Alignments" << std::endl;
-//	std::cout << alignment->data().toString() << std::endl;
-//	auto* representation = alignment->Representation();
-//	if (representation == nullptr)
-//	{
-//		std::cout << "*** Representation not provided ***" << std::endl;
-//		return;
-//	}
-//
-//	auto representations = representation->Representations();
-//	for (auto& shape_representation : *representations)
-//	{
-//		std::cout << shape_representation->data().toString() << std::endl;
-//
-//		std::string representation_identifier = shape_representation->RepresentationIdentifier().has_value() ? shape_representation->RepresentationIdentifier().value() : "???";
-//		if (representation_identifier == std::string("FootPrint"))
-//		{
-//			if (shape_representation->RepresentationType().has_value())
-//				std::cout << "Representation Type (Curve2D): " << shape_representation->RepresentationType().value() << std::endl;
-//			else
-//				std::cout << "Representation Type (Curve2D): " << "???" << std::endl;
-//
-//			auto items = shape_representation->Items();
-//			for (auto& item : *items)
-//			{
-//				std::cout << item->data().toString() << std::endl;
-//
-//				auto* composite_curve = item->as<Schema::IfcCompositeCurve>();
-//				write_composite_curve(composite_curve);
-//			}
-//		}
-//		else if (representation_identifier == std::string("Axis"))
-//		{
-//			if (shape_representation->RepresentationType().has_value())
-//				std::cout << "Representation Type (Curve3D): " << shape_representation->RepresentationType().value() << std::endl;
-//			else
-//				std::cout << "Representation Type (Curve3D): " << "???" << std::endl;
-//
-//			auto items = shape_representation->Items();
-//			for (auto& item : *items)
-//			{
-//				std::cout << item->data().toString() << std::endl;
-//
-//				auto* gradient_curve = item->as<Schema::IfcGradientCurve>();
-//				if (gradient_curve)
-//				{
-//					std::cout << "Horizontal Alignment (Base Curve)" << std::endl;
-//					write_composite_curve(gradient_curve->BaseCurve()->as<Schema::IfcCompositeCurve>());
-//					std::cout << "Vertical Profile" << std::endl;
-//					write_composite_curve(gradient_curve); // gradient_curve is an IfcCompositeCurve
-//				}
-//			}
-//		}
-//		else
-//		{
-//			std::cout << "Expecting FootPrint or Axis for representation identifier" << std::endl;
-//		}
-//	}
-//}
 
 int main(int argc, char** argv)
 {
@@ -228,14 +174,68 @@ int main(int argc, char** argv)
 	}
 
 	ifcopenshell::geometry::Settings settings;
+	settings.get<ifcopenshell::geometry::settings::PiecewiseStepType>().value = ifcopenshell::geometry::settings::PiecewiseStepMethod::MAXSTEPSIZE;
+	settings.get<ifcopenshell::geometry::settings::PiecewiseStepParam>().value = 1.0;
+
 	auto mapping = ifcopenshell::geometry::impl::mapping_implementations().construct(&file, settings);
-	//write_curve_parameters<Schema::IfcCompositeCurve>(std::cout, file, mapping);
-	write_curve_parameters<Schema::IfcSegmentedReferenceCurve>(std::cout, file, mapping);
+	std::ofstream dump_file("Points.csv");
+
+	//
+	// Write out IFC elements for curve and (x,y) (u,z) coordinates
+	// 
+	write_curve_parameters<Schema::IfcCompositeCurve>(dump_file, file, mapping);
+	//write_curve_parameters<Schema::IfcGradientCurve>(dump_file, file, mapping);
+	//write_curve_parameters<Schema::IfcSegmentedReferenceCurve>(dump_file, file, mapping);
+	
+	//
+	// Create an offset curve
+	// 
+
+	//auto list = file.instances_by_type<Schema::IfcGradientCurve>();
+	//auto gradient_curve = *(list->begin());
+	//auto base_curve = gradient_curve->BaseCurve();
+	//{
+	//	// use 1 point, not at start of curve for uniform offset - then try multiple points with varying offsets
+	//	auto offset = new Schema::IfcPointByDistanceExpression(new Schema::IfcLengthMeasure(5.0), 50.0, 100.0, boost::none, base_curve);
+	//	file.addEntity(offset);
+	//	typename aggregate_of<typename Schema::IfcPointByDistanceExpression>::ptr offset_values(new aggregate_of<typename Schema::IfcPointByDistanceExpression>());
+	//	offset_values->push(offset);
+	//	auto offset_curve = new Schema::IfcOffsetCurveByDistances(base_curve, offset_values, boost::none);
+	//	file.addEntity(offset_curve);
+
+	//	// offset curve offset from other offset curve
+	//	auto offset_curve2 = new Schema::IfcOffsetCurveByDistances(offset_curve, offset_values, boost::none);
+	//	file.addEntity(offset_curve2);
+	//}
+	//{
+	//	// use 1 point, not at start of curve for uniform offset - then try multiple points with varying offsets
+	//	auto offset = new Schema::IfcPointByDistanceExpression(new Schema::IfcLengthMeasure(5.0), -50.0, 100.0, boost::none, base_curve);
+	//	file.addEntity(offset);
+	//	typename aggregate_of<typename Schema::IfcPointByDistanceExpression>::ptr offset_values(new aggregate_of<typename Schema::IfcPointByDistanceExpression>());
+	//	offset_values->push(offset);
+	//	auto offset_curve = new Schema::IfcOffsetCurveByDistances(base_curve, offset_values, boost::none);
+	//	file.addEntity(offset_curve);
+
+	//	// offset curve offset from other offset curve
+	//	auto offset_curve2 = new Schema::IfcOffsetCurveByDistances(offset_curve, offset_values, boost::none);
+	//	file.addEntity(offset_curve2);
+	//}
+	////{
+	////	// use 1 point, not at start of curve for uniform offset - then try multiple points with varying offsets
+	////	auto offset = new Schema::IfcPointByDistanceExpression(new Schema::IfcLengthMeasure(5.0), -50.0, 100.0, boost::none, base_curve);
+	////	typename aggregate_of<typename Schema::IfcPointByDistanceExpression>::ptr offset_values(new aggregate_of<typename Schema::IfcPointByDistanceExpression>());
+	////	offset_values->push(offset);
+	////	auto offset_curve = new Schema::IfcOffsetCurveByDistances(base_curve, offset_values, boost::none);
+	////	file.addEntity(offset);
+	////	file.addEntity(offset_curve);
+	////}
+	//std::ofstream dump_file2("OffsetPoints.csv");
+	//write_curve_parameters<Schema::IfcOffsetCurveByDistances>(dump_file2, file, mapping);
 
 	//write_curve_parameters<Schema::IfcGradientCurve>(std::cout, file, mapping);
 
-	auto list = file.instances_by_type<Schema::IfcGradientCurve>();
-	auto gradient_curve = *(list->begin());
+	//auto list = file.instances_by_type<Schema::IfcGradientCurve>();
+	//auto gradient_curve = *(list->begin());
 	//auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::piecewise_function>(mapping->map(item->as<Schema::IfcSegmentedReferenceCurve>()));
 	//std::vector<double> dist{ 0,400,425,450,500,550,750,950 };
 	//for (auto d : dist)
@@ -250,24 +250,26 @@ int main(int argc, char** argv)
 	//	file.addEntity(lp);
 	//}
 
-	auto pde = new Schema::IfcPointByDistanceExpression(
-		new Schema::IfcNonNegativeLengthMeasure(425),
-		boost::none, boost::none, boost::none,
-		gradient_curve);
+	//auto pde = new Schema::IfcPointByDistanceExpression(
+	//	new Schema::IfcNonNegativeLengthMeasure(425),
+	//	boost::none, boost::none, boost::none,
+	//	gradient_curve);
 
-	auto pl = new Schema::IfcAxis2PlacementLinear(pde, nullptr, nullptr);
-	auto lp = new Schema::IfcLinearPlacement(nullptr, pl, nullptr);
-	file.addEntity(lp);
+	//auto pl = new Schema::IfcAxis2PlacementLinear(pde, nullptr, nullptr);
+	//auto lp = new Schema::IfcLinearPlacement(nullptr, pl, nullptr);
+	//file.addEntity(lp);
 
-	auto placements = file.instances_by_type<Schema::IfcLinearPlacement>();
-	for (auto& object_placement : *placements)
-	{
-		std::cout << object_placement->data().toString() << std::endl;
-		auto m = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::matrix4>(mapping->map(object_placement));
+	//auto placements = file.instances_by_type<Schema::IfcLinearPlacement>();
+	//for (auto& object_placement : *placements)
+	//{
+	//	std::cout << object_placement->data().toString() << std::endl;
+	//	auto m = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::matrix4>(mapping->map(object_placement));
 
-		std::cout << std::fixed << std::setprecision(9);
-		m->print(std::cout);
-	}
+	//	std::cout << std::fixed << std::setprecision(9);
+	//	m->print(std::cout);
+
+	//	std::cout << "det = " << m->ccomponents().determinant() << std::endl;
+	//}
   
 
 	////			auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
@@ -469,3 +471,66 @@ int main(int argc, char** argv)
 
    return 1;
 }
+
+//
+//void list_geometric_definition(Schema::IfcAlignment* alignment)
+//{
+//	std::cout << "Geometric Definition of Alignments" << std::endl;
+//	std::cout << alignment->data().toString() << std::endl;
+//	auto* representation = alignment->Representation();
+//	if (representation == nullptr)
+//	{
+//		std::cout << "*** Representation not provided ***" << std::endl;
+//		return;
+//	}
+//
+//	auto representations = representation->Representations();
+//	for (auto& shape_representation : *representations)
+//	{
+//		std::cout << shape_representation->data().toString() << std::endl;
+//
+//		std::string representation_identifier = shape_representation->RepresentationIdentifier().has_value() ? shape_representation->RepresentationIdentifier().value() : "???";
+//		if (representation_identifier == std::string("FootPrint"))
+//		{
+//			if (shape_representation->RepresentationType().has_value())
+//				std::cout << "Representation Type (Curve2D): " << shape_representation->RepresentationType().value() << std::endl;
+//			else
+//				std::cout << "Representation Type (Curve2D): " << "???" << std::endl;
+//
+//			auto items = shape_representation->Items();
+//			for (auto& item : *items)
+//			{
+//				std::cout << item->data().toString() << std::endl;
+//
+//				auto* composite_curve = item->as<Schema::IfcCompositeCurve>();
+//				write_composite_curve(composite_curve);
+//			}
+//		}
+//		else if (representation_identifier == std::string("Axis"))
+//		{
+//			if (shape_representation->RepresentationType().has_value())
+//				std::cout << "Representation Type (Curve3D): " << shape_representation->RepresentationType().value() << std::endl;
+//			else
+//				std::cout << "Representation Type (Curve3D): " << "???" << std::endl;
+//
+//			auto items = shape_representation->Items();
+//			for (auto& item : *items)
+//			{
+//				std::cout << item->data().toString() << std::endl;
+//
+//				auto* gradient_curve = item->as<Schema::IfcGradientCurve>();
+//				if (gradient_curve)
+//				{
+//					std::cout << "Horizontal Alignment (Base Curve)" << std::endl;
+//					write_composite_curve(gradient_curve->BaseCurve()->as<Schema::IfcCompositeCurve>());
+//					std::cout << "Vertical Profile" << std::endl;
+//					write_composite_curve(gradient_curve); // gradient_curve is an IfcCompositeCurve
+//				}
+//			}
+//		}
+//		else
+//		{
+//			std::cout << "Expecting FootPrint or Axis for representation identifier" << std::endl;
+//		}
+//	}
+//}
