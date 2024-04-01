@@ -8,6 +8,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 
 #define Schema Ifc4x3_add2
 
@@ -17,6 +18,9 @@
 // $(MSBuildProjectDirectory)\TestFiles\HorizontalCurves\HC_N90E_Right_1b.ifc
 // F:\IfcOpenshell\_build-vs2022-x64\examples\FHWA_Bridge_Geometry_Alignment_Example.ifc
 // $(MSBuildProjectDirectory)\TestFiles\SpiralCurves\SC_N90E_Left_1a.ifc
+// F:\IfcAlignmentDriver\TestFiles\PolynomialSpirals\ThirdOrderPolynomialSpiral.ifc
+// F:\IfcAlignmentDriver\TestFiles\Helmert\GENERATED__Helmert_100.0_inf_300_1_Meter.ifc
+// F:\IfcAlignmentDriver\TestFiles\I405-SR167.Flyover.ifc
 
 void list_semantic_definition(Schema::IfcAlignment* alignment)
 {
@@ -116,44 +120,148 @@ void write_curve_definition(std::ostream& os, Schema::IfcCurve* curve)
 	{
 		os << curve->as<Schema::IfcOffsetCurveByDistances>()->data().toString() << std::endl;
 	}
+	else if (curve->as<Schema::IfcPolyline>())
+	{
+		os << curve->as<Schema::IfcPolyline>()->data().toString() << std::endl;
+	}
 
 	os << std::endl;
 }
 
-template <typename CurveType>
-void write_curve_parameters(std::ostream& os, IfcParse::IfcFile& file, ifcopenshell::geometry::abstract_mapping* mapping)
+//template <typename CurveType>
+void write_curve_parameters(std::ostream& os, IfcParse::IfcFile& file, ifcopenshell::geometry::abstract_mapping* mapping,const std::string& representationType = "Curve3D")
 {
 	auto length_unit = mapping->get_length_unit();
-	auto curves = file.instances_by_type<CurveType>();
-	for (auto& curve : *curves)
+	auto alignments = file.instances_by_type<Schema::IfcAlignment>();
+	for (auto& alignment : *alignments)
 	{
-		write_curve_definition(std::cout, curve->as<CurveType>());
-
-		auto mapped_item = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::implicit_item>(mapping->map(curve->as<CurveType>()));
-		auto loop = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::loop>(mapped_item->evaluate());
-
-		const auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->ccomponents();
-		double ex = start.x(), ey = start.y();
-		double u = 0;
-		for (auto& c : loop->children)
+		auto alignment_representation = alignment->Representation();
+		auto representations = alignment_representation->Representations();
+		for (auto& representation : *representations)
 		{
-			const auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->ccomponents();
-			auto dx = s.x() - ex;
-			auto dy = s.y() - ey;
-			u += sqrt(dx * dx + dy * dy);
-			os << s.x()/length_unit << ", " << s.y() / length_unit << ", " << u / length_unit << ", " << s.z() / length_unit << std::endl;
+			if (representation->RepresentationType().get_value_or("") != representationType)
+				continue;
 
-			const auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->ccomponents();
-			dx = e.x() - s.x();
-			dy = e.y() - s.y();
-			u += sqrt(dx * dx + dy * dy);
-			os << e.x() / length_unit << ", " << e.y() / length_unit << ", " << u / length_unit << ", " << e.z() / length_unit << std::endl;
+			auto items = representation->Items();
+			for (auto& item : *items)
+			{
+				if (item->as<Schema::IfcCurve>())
+				{
+					auto curve = item->as<Schema::IfcCurve>();
+					write_curve_definition(std::cout, curve);
 
-			ex = e.x();
-			ey = e.y();
+					ifcopenshell::geometry::taxonomy::ptr mapped_item;
+					if (curve->as<Schema::IfcSegmentedReferenceCurve>())
+					{
+						mapped_item = mapping->map(curve->as<Schema::IfcSegmentedReferenceCurve>());
+					}
+					else if (curve->as<Schema::IfcGradientCurve>())
+					{
+						mapped_item = mapping->map(curve->as<Schema::IfcGradientCurve>());
+					}
+					else if (curve->as<Schema::IfcCompositeCurve>())
+					{
+						mapped_item = mapping->map(curve->as<Schema::IfcCompositeCurve>());
+					}
+					else if (curve->as<Schema::IfcPolyline>())
+					{
+						mapped_item = mapping->map(curve->as<Schema::IfcPolyline>());
+					}
+
+					ifcopenshell::geometry::taxonomy::loop::ptr loop;
+					auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
+					if (implicit_item)
+					{
+						loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(implicit_item->evaluate());
+					}
+					else
+					{
+						loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(mapped_item);
+					}
+
+					auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
+
+					os << "X, Y, u, Z, Xx, Xy, Xz, Yx, Yy, Yz, Zx, Zy, Zz" << std::endl;
+
+					const auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->ccomponents();
+					double ex = start.x(), ey = start.y();
+					os << ex / length_unit << ", " << ey / length_unit << ", " << 0.0 << ", " << start.z() / length_unit;
+					if (pwf)
+					{
+						auto p = pwf->evaluate(0.0);
+						os << ", " << p.col(0)(0) << ", " << p.col(0)(1) << ", " << p.col(0)(2); // x-axis
+						os << ", " << p.col(1)(0) << ", " << p.col(1)(1) << ", " << p.col(1)(2); // y-axis
+						os << ", " << p.col(2)(0) << ", " << p.col(2)(1) << ", " << p.col(2)(2); // z-axis
+					}
+					os << std::endl;
+
+					double u = 0;
+					for (auto& edge : loop->children)
+					{
+						const auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(edge->end)->ccomponents();
+						auto dx = e.x() - ex;
+						auto dy = e.y() - ey;
+						u += sqrt(dx * dx + dy * dy);
+						os << e.x() / length_unit << ", " << e.y() / length_unit << ", " << u / length_unit << ", " << e.z() / length_unit;
+
+						if (pwf)
+						{
+							auto p = pwf->evaluate(u);
+							os << ", " << p.col(0)(0) << ", " << p.col(0)(1) << ", " << p.col(0)(2); // x-axis
+							os << ", " << p.col(1)(0) << ", " << p.col(1)(1) << ", " << p.col(1)(2); // y-axis
+							os << ", " << p.col(2)(0) << ", " << p.col(2)(1) << ", " << p.col(2)(2); // z-axis
+						}
+
+						os << std::endl;
+
+						ex = e.x();
+						ey = e.y();
+					}
+				}
+			}
 		}
-
 	}
+
+//	auto curves = file.instances_by_type<CurveType>();
+//	for (auto& curve : *curves)
+//	{
+//		write_curve_definition(std::cout, curve->as<CurveType>());
+//
+//		auto mapped_item = mapping->map(curve->as<CurveType>());
+//		ifcopenshell::geometry::taxonomy::loop::ptr loop;
+//		auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
+//		if (implicit_item)
+//		{
+//		  loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(implicit_item->evaluate());
+//	   }
+//		else
+//		{
+//			loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(mapped_item);
+//		}
+//
+//		const auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->ccomponents();
+//		double ex = start.x(), ey = start.y();
+//		os << start.x() / length_unit << ", " << start.y() / length_unit << ", " << 0.0 << ", " << start.z() / length_unit << std::endl;
+//		double u = 0;
+//		for (auto& c : loop->children)
+//		{
+//			const auto& s = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->start)->ccomponents();
+//			auto dx = s.x() - ex;
+//			auto dy = s.y() - ey;
+//			u += sqrt(dx * dx + dy * dy);
+////			os << s.x()/length_unit << ", " << s.y() / length_unit << ", " << u / length_unit << ", " << s.z() / length_unit << std::endl;
+//
+//			const auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(c->end)->ccomponents();
+//			dx = e.x() - s.x();
+//			dy = e.y() - s.y();
+//			u += sqrt(dx * dx + dy * dy);
+//			os << e.x() / length_unit << ", " << e.y() / length_unit << ", " << u / length_unit << ", " << e.z() / length_unit << std::endl;
+//
+//			ex = e.x();
+//			ey = e.y();
+//		}
+//
+//	}
 }
 
 int main(int argc, char** argv)
@@ -183,9 +291,7 @@ int main(int argc, char** argv)
 	//
 	// Write out IFC elements for curve and (x,y) (u,z) coordinates
 	// 
-	write_curve_parameters<Schema::IfcCompositeCurve>(dump_file, file, mapping);
-	//write_curve_parameters<Schema::IfcGradientCurve>(dump_file, file, mapping);
-	//write_curve_parameters<Schema::IfcSegmentedReferenceCurve>(dump_file, file, mapping);
+	write_curve_parameters(dump_file, file, mapping,"Curve2D");
 	
 	//
 	// Create an offset curve
