@@ -21,6 +21,7 @@
 // F:\IfcAlignmentDriver\TestFiles\PolynomialSpirals\ThirdOrderPolynomialSpiral.ifc
 // F:\IfcAlignmentDriver\TestFiles\Helmert\GENERATED__Helmert_100.0_inf_300_1_Meter.ifc
 // F:\IfcAlignmentDriver\TestFiles\I405-SR167.Flyover.ifc
+// F:\IfcAlignmentDriver\TestFiles\Viadotto_Acerno_ADD2_rn7jkRY.ifc
 
 void write_point(std::ostream& os, Schema::IfcCartesianPoint* point)
 {
@@ -295,13 +296,27 @@ void write_curve_parameters(IfcParse::IfcFile& file, ifcopenshell::geometry::abs
 					}
 					osPoints << std::endl;
 
+					auto resolution = 0.0;
+					if (pwf)
+					{
+						auto l = pwf->length();
+						resolution = l / (loop->children.size());
+					}
+
 					double u = 0;
 					for (auto& edge : loop->children)
 					{
 						const auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(edge->end)->ccomponents();
 						auto dx = e.x() - ex;
 						auto dy = e.y() - ey;
-						u += sqrt(dx * dx + dy * dy);
+						if (pwf)
+						{
+							u += resolution;
+						}
+						else
+						{
+							u += sqrt(dx * dx + dy * dy);
+						}
 						osPoints << e.x() / length_unit << ", " << e.y() / length_unit << ", " << u / length_unit << ", " << e.z() / length_unit;
 
 						if (pwf)
