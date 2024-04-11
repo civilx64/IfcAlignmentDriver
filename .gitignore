@@ -400,3 +400,4 @@ FodyWeavers.xsd
 
 *.csv
 *.txt
+/Notebooks/.ipynb_checkpoints

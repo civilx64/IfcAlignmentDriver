@@ -406,6 +406,17 @@ int main(int argc, char** argv)
 	// Write out IFC elements for curve and (x,y) (u,z) coordinates
 	// 
 	write_curve_parameters(file, mapping);
+
+	//auto lp = file.instance_by_id(186676)->as<Ifc4x3_add2::IfcLinearPlacement>();
+	//auto lp = file.instance_by_id(193459)->as<Ifc4x3_add2::IfcAxis2PlacementLinear>();
+	//auto m = mapping->map(lp);
+
+	//auto pde = new Schema::IfcPointByDistanceExpression(new Schema::IfcNonNegativeLengthMeasure(308.0), boost::none, boost::none, boost::none, file.instance_by_id(159751)->as<Schema::IfcCurve>());
+	//auto pl = new Schema::IfcAxis2PlacementLinear(pde, nullptr, nullptr);
+	//auto lp = new Schema::IfcLinearPlacement(nullptr, pl, nullptr);
+	////auto m = mapping->map(lp);
+	//auto m = ifcopenshell::geometry::taxonomy::cast<ifcopenshell::geometry::taxonomy::matrix4>(mapping->map(lp));
+
 	
 	//
 	// Create an offset curve
