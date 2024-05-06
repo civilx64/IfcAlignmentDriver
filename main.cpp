@@ -405,7 +405,7 @@ int main(int argc, char** argv)
 	//
 	// Write out IFC elements for curve and (x,y) (u,z) coordinates
 	// 
-	write_curve_parameters(file, mapping, "Curve2D");
+	write_curve_parameters(file, mapping, "Curve3D");
 
 	//auto lp = file.instance_by_id(186676)->as<Ifc4x3_add2::IfcLinearPlacement>();
 	//auto lp = file.instance_by_id(193459)->as<Ifc4x3_add2::IfcAxis2PlacementLinear>();
