@@ -125,6 +125,11 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentSegment* seg
 		auto hseg = design_parameters->as<Schema::IfcAlignmentHorizontalSegment>();
 		write_point(os, hseg->StartPoint());
 	}
+	else if (design_parameters->as<Schema::IfcAlignmentVerticalSegment>())
+	{
+		auto vseg = design_parameters->as<Schema::IfcAlignmentVerticalSegment>();
+		//write_point(os, vseg->StartPoint());
+	}
 
 	auto product_representation = segment->Representation();
 	write_product_representation(os, product_representation);
@@ -135,6 +140,25 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentHorizontal* 
 	os << horizontal->data().toString() << std::endl;
 
 	auto nested_by = horizontal->IsNestedBy();
+	for (const auto& nested : *nested_by)
+	{
+		auto related_objects = nested->RelatedObjects();
+		for (const auto& related_object : *related_objects)
+		{
+			os << related_object->data().toString() << std::endl;
+			if (related_object->as<Schema::IfcAlignmentSegment>())
+			{
+				list_semantic_definition(os, related_object->as<Schema::IfcAlignmentSegment>());
+			}
+		}
+	}
+}
+
+void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentVertical* vertical)
+{
+	os << vertical->data().toString() << std::endl;
+
+	auto nested_by = vertical->IsNestedBy();
 	for (const auto& nested : *nested_by)
 	{
 		auto related_objects = nested->RelatedObjects();
@@ -160,10 +184,13 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignment* alignment)
 		auto related_objects = nested->RelatedObjects();
 		for (const auto& related_object : *related_objects)
 		{
-			os << related_object->data().toString() << std::endl;
 			if (related_object->as<Schema::IfcAlignmentHorizontal>())
 			{
 				list_semantic_definition(os, related_object->as<Schema::IfcAlignmentHorizontal>());
+			}
+			else if (related_object->as<Schema::IfcAlignmentVertical>())
+			{
+				list_semantic_definition(os, related_object->as<Schema::IfcAlignmentVertical>());
 			}
 		}
 	}
@@ -284,12 +311,13 @@ void write_curve_parameters(IfcParse::IfcFile& file, ifcopenshell::geometry::abs
 
 					osPoints << "X, Y, u, Z, Xx, Xy, Xz, Yx, Yy, Yz, Zx, Zy, Zz" << std::endl;
 
+					double d1 = pwf ? pwf->start() : 0.0;
 					const auto& start = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(loop->children.begin()->get()->start)->ccomponents();
 					double ex = start.x(), ey = start.y();
-					osPoints << ex / length_unit << ", " << ey / length_unit << ", " << 0.0 << ", " << start.z() / length_unit;
+					osPoints << ex / length_unit << ", " << ey / length_unit << ", " << d1 << ", " << start.z() / length_unit;
 					if (pwf)
 					{
-						auto p = pwf->evaluate(0.0);
+						auto p = pwf->evaluate(d1);
 						osPoints << ", " << p.col(0)(0) << ", " << p.col(0)(1) << ", " << p.col(0)(2); // x-axis
 						osPoints << ", " << p.col(1)(0) << ", " << p.col(1)(1) << ", " << p.col(1)(2); // y-axis
 						osPoints << ", " << p.col(2)(0) << ", " << p.col(2)(1) << ", " << p.col(2)(2); // z-axis
@@ -303,7 +331,7 @@ void write_curve_parameters(IfcParse::IfcFile& file, ifcopenshell::geometry::abs
 						resolution = l / (loop->children.size());
 					}
 
-					double u = 0;
+					double u = d1;
 					for (auto& edge : loop->children)
 					{
 						const auto& e = boost::get<ifcopenshell::geometry::taxonomy::point3::ptr>(edge->end)->ccomponents();
@@ -402,25 +430,35 @@ int main(int argc, char** argv)
 
 	auto mapping = ifcopenshell::geometry::impl::mapping_implementations().construct(&file, settings);
 
+	//auto gc = file.instance_by_id(485)->as<Schema::IfcGradientCurve>();
+	//auto mapped_item = mapping->map(gc);
+	//auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(mapped_item);
+	//auto [start, end] = pwf->range();
+	//std::cout << "start " << start << " end " << end << std::endl;
+	//auto p = pwf->evaluate(start);
+	//auto length_unit = mapping->get_length_unit();
+	//p /= length_unit;
+	//std::cout << p(0, 3) << ", " << p(1, 3) << ", " << p(2, 3) << std::endl;
+
 	//
 	// Write out IFC elements for curve and (x,y) (u,z) coordinates
 	// 
-	//write_curve_parameters(file, mapping, "Curve3D");
+	write_curve_parameters(file, mapping, "Curve3D");
 
-	// map each segment
-	auto ccs = file.instances_by_type<Schema::IfcCompositeCurve>();
-	auto cc = (*ccs->begin())->as<Schema::IfcCompositeCurve>();
-	auto segments = cc->Segments();
-	for (auto segment : *segments)
-	{
-		auto mapped_item = mapping->map(segment);
+	//// map each segment
+	//auto ccs = file.instances_by_type<Schema::IfcCompositeCurve>();
+	//auto cc = (*ccs->begin())->as<Schema::IfcCompositeCurve>();
+	//auto segments = cc->Segments();
+	//for (auto segment : *segments)
+	//{
+	//	auto mapped_item = mapping->map(segment);
 
-		auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
-		auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
-		pwf->evaluate(pwf->length());
+	//	auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
+	//	auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
+	//	pwf->evaluate(pwf->length());
 
-		ifcopenshell::geometry::taxonomy::loop::ptr loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(pwf->evaluate());
-   }
+	//	ifcopenshell::geometry::taxonomy::loop::ptr loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(pwf->evaluate());
+ //  }
 
 
 
