@@ -25,49 +25,49 @@
 
 void write_point(std::ostream& os, Schema::IfcCartesianPoint* point)
 {
-	point->data().toString(os);
+	point->toString(os); os << std::endl;
 }
 
 void write_placement(std::ostream& os, Schema::IfcPlacement* placement)
 {
-	placement->data().toString(os);
+	placement->toString(os); os << std::endl;
 	if (placement->as<Schema::IfcAxis1Placement>())
 	{
 
 	}
 	else if (placement->as<Schema::IfcAxis2Placement2D>())
 	{
-		placement->as<Schema::IfcAxis2Placement2D>()->Location()->data().toString(os);
+		placement->as<Schema::IfcAxis2Placement2D>()->Location()->toString(os); os << std::endl;
 		auto ref_direction = placement->as<Schema::IfcAxis2Placement2D>()->RefDirection();
-		if( ref_direction ) ref_direction->data().toString(os);
+		if( ref_direction ) ref_direction->toString(os); os << std::endl;
 	}
 	else if (placement->as<Schema::IfcAxis2Placement3D>())
 	{
-		placement->as<Schema::IfcAxis2Placement3D>()->Location()->data().toString(os);
+		placement->as<Schema::IfcAxis2Placement3D>()->Location()->toString(os); os << std::endl;
 
 		auto axis = placement->as<Schema::IfcAxis2Placement3D>()->Axis();
-		if (axis) axis->data().toString(os);
+		if (axis) axis->toString(os); os << std::endl;
 
 		auto ref_direction = placement->as<Schema::IfcAxis2Placement3D>()->RefDirection();
-		if (ref_direction) ref_direction->data().toString(os);
+		if (ref_direction) ref_direction->toString(os); os << std::endl;
 	}
 	else if (placement->as<Schema::IfcAxis2PlacementLinear>())
 	{
-		placement->as<Schema::IfcAxis2PlacementLinear>()->Location()->data().toString(os);
+		placement->as<Schema::IfcAxis2PlacementLinear>()->Location()->toString(os); os << std::endl;
 		
 		auto axis = placement->as<Schema::IfcAxis2PlacementLinear>()->Axis();
-		if(axis) axis->data().toString(os);
+		if(axis) axis->toString(os); os << std::endl;
 
 		auto ref_direction = placement->as<Schema::IfcAxis2PlacementLinear>()->RefDirection();
-		if (ref_direction) ref_direction->data().toString(os);
+		if (ref_direction) ref_direction->toString(os); os << std::endl;
 	}
 }
 
 void write_line(std::ostream& os, Schema::IfcLine* line)
 {
-	line->Pnt()->data().toString(os);
-	line->Dir()->data().toString(os);
-	line->Dir()->Orientation()->data().toString(os);
+	line->Pnt()->toString(os); os << std::endl;
+	line->Dir()->toString(os); os << std::endl;
+	line->Dir()->Orientation()->toString(os); os << std::endl;
 }
 
 void write_circle(std::ostream& os, Schema::IfcCircle* circle)
@@ -82,7 +82,7 @@ void write_clothoid(std::ostream& os, Schema::IfcClothoid* clothoid)
 
 void write_parent_curve(std::ostream& os, Schema::IfcCurve* parent_curve)
 {
-	parent_curve->data().toString(os);
+	parent_curve->toString(os); os << std::endl;
 
 	if (parent_curve->as<Schema::IfcLine>())
 		write_line(os, parent_curve->as<Schema::IfcLine>());
@@ -100,7 +100,7 @@ void write_representation(std::ostream& os, Schema::IfcRepresentation* represent
 		if (item->as<Schema::IfcCurveSegment>())
 		{
 			auto segment = item->as<Schema::IfcCurveSegment>();
-			segment->data().toString(os);
+			segment->toString(os); os << std::endl;
 			write_placement(os, segment->Placement());
 			write_parent_curve(os, segment->ParentCurve());
 		}
@@ -119,7 +119,7 @@ void write_product_representation(std::ostream& os, Schema::IfcProductRepresenta
 void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentSegment* segment)
 {
 	auto design_parameters = segment->DesignParameters();
-	design_parameters->data().toString(os);
+	design_parameters->toString(os); os << std::endl;
 	if (design_parameters->as<Schema::IfcAlignmentHorizontalSegment>())
 	{
 		auto hseg = design_parameters->as<Schema::IfcAlignmentHorizontalSegment>();
@@ -137,7 +137,7 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentSegment* seg
 
 void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentHorizontal* horizontal)
 {
-	horizontal->data().toString(os);
+	horizontal->toString(os); os << std::endl;
 
 	auto nested_by = horizontal->IsNestedBy();
 	for (const auto& nested : *nested_by)
@@ -145,7 +145,7 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentHorizontal* 
 		auto related_objects = nested->RelatedObjects();
 		for (const auto& related_object : *related_objects)
 		{
-			related_object->data().toString(os);
+			related_object->toString(os); os << std::endl;
 			if (related_object->as<Schema::IfcAlignmentSegment>())
 			{
 				list_semantic_definition(os, related_object->as<Schema::IfcAlignmentSegment>());
@@ -156,7 +156,7 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentHorizontal* 
 
 void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentVertical* vertical)
 {
-	vertical->data().toString(os);
+	vertical->toString(os); os << std::endl;
 
 	auto nested_by = vertical->IsNestedBy();
 	for (const auto& nested : *nested_by)
@@ -164,7 +164,7 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentVertical* ve
 		auto related_objects = nested->RelatedObjects();
 		for (const auto& related_object : *related_objects)
 		{
-		   related_object->data().toString(os);
+		   related_object->toString(os); os << std::endl;
 			if (related_object->as<Schema::IfcAlignmentSegment>())
 			{
 				list_semantic_definition(os, related_object->as<Schema::IfcAlignmentSegment>());
@@ -176,7 +176,7 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentVertical* ve
 void list_semantic_definition(std::ostream& os, Schema::IfcAlignment* alignment)
 {
 	os << "Semantic Definition of Alignments (business logic)" << std::endl;
-	alignment->data().toString(os);
+	alignment->toString(os); os << std::endl;
 
 	auto nested_by = alignment->IsNestedBy();
 	for (const auto& nested : *nested_by)
@@ -202,7 +202,7 @@ void write_curve_segments(std::ostream& os, Schema::IfcCompositeCurve* composite
 	auto segments = composite_curve->Segments();
 	for (auto& segment : *segments)
 	{
-		segment->data().toString(os);
+		segment->toString(os); os << std::endl;
 		auto curve_segment = segment->as<Schema::IfcCurveSegment>();
 		write_placement(os, curve_segment->Placement());
 
@@ -216,27 +216,27 @@ void write_curve_definition(std::ostream& os, Schema::IfcCurve* curve)
 	if (curve->as<Schema::IfcSegmentedReferenceCurve>())
 	{
 		write_curve_definition(os, curve->as<Schema::IfcSegmentedReferenceCurve>()->BaseCurve());
-		curve->as<Schema::IfcSegmentedReferenceCurve>()->data().toString(os);
+		curve->as<Schema::IfcSegmentedReferenceCurve>()->toString(os); os << std::endl;
 		write_curve_segments(os, curve->as<Schema::IfcCompositeCurve>());
 	}
 	else if (curve->as<Schema::IfcGradientCurve>())
 	{
 		write_curve_definition(os, curve->as<Schema::IfcGradientCurve>()->BaseCurve());
-		curve->as<Schema::IfcGradientCurve>()->data().toString(os);
+		curve->as<Schema::IfcGradientCurve>()->toString(os); os << std::endl;
 		write_curve_segments(os, curve->as<Schema::IfcCompositeCurve>());
 	}
 	else if (curve->as<Schema::IfcCompositeCurve>())
 	{
-		curve->as<Schema::IfcCompositeCurve>()->data().toString(os);
+		curve->as<Schema::IfcCompositeCurve>()->toString(os); os << std::endl;
 		write_curve_segments(os, curve->as<Schema::IfcCompositeCurve>());
 	}
 	else if (curve->as<Schema::IfcOffsetCurveByDistances>())
 	{
-		curve->as<Schema::IfcOffsetCurveByDistances>()->data().toString(os);
+		curve->as<Schema::IfcOffsetCurveByDistances>()->toString(os); os << std::endl;
 	}
 	else if (curve->as<Schema::IfcPolyline>())
 	{
-		curve->as<Schema::IfcPolyline>()->data().toString(os);
+		curve->as<Schema::IfcPolyline>()->toString(os); os << std::endl;
 	}
 
 	os << std::endl;
@@ -298,16 +298,17 @@ void write_curve_parameters(IfcParse::IfcFile& file, ifcopenshell::geometry::abs
 
 					ifcopenshell::geometry::taxonomy::loop::ptr loop;
 					auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
+					auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
+					ifcopenshell::geometry::taxonomy::piecewise_function_evaluator evaluator(pwf);
 					if (implicit_item)
 					{
-						loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(implicit_item->evaluate());
+						loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(evaluator.evaluate());
 					}
 					else
 					{
 						loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(mapped_item);
 					}
 
-					auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
 
 					osPoints << "X, Y, u, Z, Xx, Xy, Xz, Yx, Yy, Yz, Zx, Zy, Zz" << std::endl;
 
@@ -317,7 +318,7 @@ void write_curve_parameters(IfcParse::IfcFile& file, ifcopenshell::geometry::abs
 					osPoints << ex / length_unit << ", " << ey / length_unit << ", " << d1 << ", " << start.z() / length_unit;
 					if (pwf)
 					{
-						auto p = pwf->evaluate(d1);
+						auto p = evaluator.evaluate(d1);
 						osPoints << ", " << p.col(0)(0) << ", " << p.col(0)(1) << ", " << p.col(0)(2); // x-axis
 						osPoints << ", " << p.col(1)(0) << ", " << p.col(1)(1) << ", " << p.col(1)(2); // y-axis
 						osPoints << ", " << p.col(2)(0) << ", " << p.col(2)(1) << ", " << p.col(2)(2); // z-axis
@@ -349,7 +350,7 @@ void write_curve_parameters(IfcParse::IfcFile& file, ifcopenshell::geometry::abs
 
 						if (pwf)
 						{
-							auto p = pwf->evaluate(u);
+							auto p = evaluator.evaluate(u);
 							osPoints << ", " << p.col(0)(0) << ", " << p.col(0)(1) << ", " << p.col(0)(2); // x-axis
 							osPoints << ", " << p.col(1)(0) << ", " << p.col(1)(1) << ", " << p.col(1)(2); // y-axis
 							osPoints << ", " << p.col(2)(0) << ", " << p.col(2)(1) << ", " << p.col(2)(2); // z-axis
