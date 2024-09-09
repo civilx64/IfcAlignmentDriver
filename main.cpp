@@ -3,7 +3,7 @@
 
 #include <ifcparse/IfcHierarchyHelper.h>
 #include <ifcparse/Ifc4x3_add2.h>
-
+#include <ifcgeom/piecewise_function_evaluator.h>
 #include <ifcgeom/abstract_mapping.h>
 
 #include <iomanip>
@@ -299,7 +299,8 @@ void write_curve_parameters(IfcParse::IfcFile& file, ifcopenshell::geometry::abs
 					ifcopenshell::geometry::taxonomy::loop::ptr loop;
 					auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
 					auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
-					ifcopenshell::geometry::taxonomy::piecewise_function_evaluator evaluator(pwf);
+					ifcopenshell::geometry::piecewise_function_evaluator evaluator(pwf);
+					auto points = evaluator.evaluation_points();
 					if (implicit_item)
 					{
 						loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(evaluator.evaluate());
