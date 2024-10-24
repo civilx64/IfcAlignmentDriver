@@ -445,25 +445,55 @@ int main(int argc, char** argv)
 	//
 	// Write out IFC elements for curve and (x,y) (u,z) coordinates
 	// 
-	write_curve_parameters(file, mapping, "Curve3D");
+	//write_curve_parameters(file, mapping, "Curve3D");
 
-	//// map each segment
-	//auto ccs = file.instances_by_type<Schema::IfcCompositeCurve>();
-	//auto cc = (*ccs->begin())->as<Schema::IfcCompositeCurve>();
-	//auto segments = cc->Segments();
+	// map each segment
+	auto ccs = file.instances_by_type<Schema::IfcCompositeCurve>();
+	auto cc = (*ccs->begin())->as<Schema::IfcCompositeCurve>();
+	auto segments = cc->Segments();
+	auto length_unit = mapping->get_length_unit();
+
+	for (auto segment : *segments)
+	{
+		auto mapped_item = mapping->map(segment);
+
+		auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
+		auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
+		ifcopenshell::geometry::piecewise_function_evaluator evaluator(pwf);
+		//ifcopenshell::geometry::taxonomy::loop::ptr loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(evaluator.evaluate());
+		auto curve_segment = segment->as<Schema::IfcCurveSegment>();
+		auto id = curve_segment->id();
+		//double start = curve_segment->SegmentStart()->data().get_attribute_value(0);
+		double length = curve_segment->SegmentLength()->data().get_attribute_value(0);
+		Eigen::Matrix4d s = evaluator.evaluate(0.0);
+		Eigen::Matrix4d e = evaluator.evaluate(length * length_unit);
+
+		s(0, 3) /= length_unit;
+		s(1, 3) /= length_unit;
+
+		e(0, 3) /= length_unit;
+		e(1, 3) /= length_unit;
+	}
+
+
+	//auto gcs = file.instances_by_type<Schema::IfcGradientCurve>();
+	//auto gc = (*gcs->begin())->as<Schema::IfcGradientCurve>();
+	//auto mapped_item = mapping->map(gc);
+	//auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
+	//auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
+	//ifcopenshell::geometry::piecewise_function_evaluator evaluator(pwf);
+	//evaluator.evaluate(30.0);
+
+	//auto segments = gc->Segments();
 	//for (auto segment : *segments)
 	//{
 	//	auto mapped_item = mapping->map(segment);
 
 	//	auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
 	//	auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
-	//	pwf->evaluate(pwf->length());
-
-	//	ifcopenshell::geometry::taxonomy::loop::ptr loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(pwf->evaluate());
- //  }
-
-
-
+	//	ifcopenshell::geometry::piecewise_function_evaluator evaluator(pwf);
+	//	ifcopenshell::geometry::taxonomy::loop::ptr loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(evaluator.evaluate());
+	//}
 
 	//auto lp = file.instance_by_id(186676)->as<Ifc4x3_add2::IfcLinearPlacement>();
 	//auto lp = file.instance_by_id(193459)->as<Ifc4x3_add2::IfcAxis2PlacementLinear>();
