@@ -398,6 +398,11 @@ FodyWeavers.xsd
 *.sln.iml
 *.bak
 
+# JetBrains IDEs (generic)
+.idea/
+
 *.csv
-*.txt
 /Notebooks/.ipynb_checkpoints
+
+# CMake output
+build/

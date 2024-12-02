@@ -94,12 +94,12 @@ void write_parent_curve(std::ostream& os, Schema::IfcCurve* parent_curve)
 
 void write_representation(std::ostream& os, Schema::IfcRepresentation* representation)
 {
-	auto items = representation->Items();
-	for (auto item : *items)
+	const auto citems = representation->Items();
+	for (const auto item : *citems)
 	{
 		if (item->as<Schema::IfcCurveSegment>())
 		{
-			auto segment = item->as<Schema::IfcCurveSegment>();
+            const auto segment = item->as<Schema::IfcCurveSegment>();
 			segment->toString(os); os << std::endl;
 			write_placement(os, segment->Placement());
 			write_parent_curve(os, segment->ParentCurve());
@@ -109,8 +109,8 @@ void write_representation(std::ostream& os, Schema::IfcRepresentation* represent
 
 void write_product_representation(std::ostream& os, Schema::IfcProductRepresentation* product_representation)
 {
-	auto representations = product_representation->Representations();
-	for (auto representation : *representations)
+    const auto representations = product_representation->Representations();
+	for (const auto representation : *representations)
 	{
 		write_representation(os, representation);
 	}
@@ -118,11 +118,11 @@ void write_product_representation(std::ostream& os, Schema::IfcProductRepresenta
 
 void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentSegment* segment)
 {
-	auto design_parameters = segment->DesignParameters();
+    const auto design_parameters = segment->DesignParameters();
 	design_parameters->toString(os); os << std::endl;
 	if (design_parameters->as<Schema::IfcAlignmentHorizontalSegment>())
 	{
-		auto hseg = design_parameters->as<Schema::IfcAlignmentHorizontalSegment>();
+		const auto hseg = design_parameters->as<Schema::IfcAlignmentHorizontalSegment>();
 		write_point(os, hseg->StartPoint());
 	}
 	else if (design_parameters->as<Schema::IfcAlignmentVerticalSegment>())
@@ -131,7 +131,7 @@ void list_semantic_definition(std::ostream& os, Schema::IfcAlignmentSegment* seg
 		//write_point(os, vseg->StartPoint());
 	}
 
-	auto product_representation = segment->Representation();
+	const auto product_representation = segment->Representation();
 	write_product_representation(os, product_representation);
 }
 
@@ -464,36 +464,52 @@ int main(int argc, char** argv)
 		auto curve_segment = segment->as<Schema::IfcCurveSegment>();
 		auto id = curve_segment->id();
 		//double start = curve_segment->SegmentStart()->data().get_attribute_value(0);
-		double length = curve_segment->SegmentLength()->data().get_attribute_value(0);
-		Eigen::Matrix4d s = evaluator.evaluate(0.0);
-		Eigen::Matrix4d e = evaluator.evaluate(length * length_unit);
+        const double length = curve_segment->SegmentLength()->data().get_attribute_value(0);
+		// Eigen::Matrix4d s = evaluator.evaluate(0.0);
+		// Eigen::Matrix4d e = evaluator.evaluate(length * length_unit);
 
-		s(0, 3) /= length_unit;
-		s(1, 3) /= length_unit;
+		//s(0, 3) /= length_unit;
+		//s(1, 3) /= length_unit;
 
-		e(0, 3) /= length_unit;
-		e(1, 3) /= length_unit;
+		//e(0, 3) /= length_unit;
+		//e(1, 3) /= length_unit;
 	}
 
 
-	//auto gcs = file.instances_by_type<Schema::IfcGradientCurve>();
-	//auto gc = (*gcs->begin())->as<Schema::IfcGradientCurve>();
-	//auto mapped_item = mapping->map(gc);
-	//auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
-	//auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
-	//ifcopenshell::geometry::piecewise_function_evaluator evaluator(pwf);
-	//evaluator.evaluate(30.0);
+	const auto gcs = file.instances_by_type<Schema::IfcGradientCurve>();
+	const auto gc = (*gcs->begin())->as<Schema::IfcGradientCurve>();
+	// const auto mapped_item = mapping->map(gc);
+	// const auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
+	// const auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
+	// const ifcopenshell::geometry::piecewise_function_evaluator evaluator(pwf);
+	// evaluator.evaluate(30.0);
 
-	//auto segments = gc->Segments();
-	//for (auto segment : *segments)
-	//{
-	//	auto mapped_item = mapping->map(segment);
+	const auto gc_segments = gc->Segments();
+	for (const auto segment : *gc_segments)
+	{
+		auto mapped_item = mapping->map(segment);
 
-	//	auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
-	//	auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
-	//	ifcopenshell::geometry::piecewise_function_evaluator evaluator(pwf);
-	//	ifcopenshell::geometry::taxonomy::loop::ptr loop = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::loop>(evaluator.evaluate());
-	//}
+		auto implicit_item = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::implicit_item>(mapped_item);
+		auto pwf = ifcopenshell::geometry::taxonomy::dcast<ifcopenshell::geometry::taxonomy::piecewise_function>(implicit_item);
+		ifcopenshell::geometry::piecewise_function_evaluator evaluator(pwf);
+
+        if (const auto id = segment->id(); id == 152) {
+
+            const double step = 160.0 * length_unit;
+            std::vector<double> dist{ 0,step,2*step,3*step,4*step,5*step,6*step,7*step,8*step,9*step,10*step };
+            for (auto d : dist)
+            {
+                const auto matrix = evaluator.evaluate(d);
+                std::cout << "distance being evaluated: " << d / length_unit << std::endl;
+
+                std::cout << "distance along base curve: " << matrix(0, 3) / length_unit << std::endl;
+                std::cout << "elevation: " << matrix(1, 3) / length_unit << std::endl;
+                std::cout << std::endl;
+            }
+
+	    }
+
+	}
 
 	//auto lp = file.instance_by_id(186676)->as<Ifc4x3_add2::IfcLinearPlacement>();
 	//auto lp = file.instance_by_id(193459)->as<Ifc4x3_add2::IfcAxis2PlacementLinear>();
